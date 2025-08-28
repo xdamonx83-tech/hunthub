@@ -88,10 +88,7 @@ ob_start();
                   <label class="label label-lg mb-3" data-i18n="username"><?php echo $L['username']; ?></label>
                   <input type="text" name="display_name" value="<?= htmlspecialchars($me['display_name']) ?>" required class="box-input-3" />
                 </div>
-                <div class="sm:col-span-4 col-span-8">
-                  <label class="label label-lg mb-3">Last Name</label>
-                  <input type="text" name="last_name" class="box-input-3" />
-                </div>
+        
                 <div class="col-span-8">
                   <label class="label label-lg mb-3" data-i18n="email"><?php echo $L['email']; ?></label>
                   <input type="email" name="email" value="<?= htmlspecialchars($me['email']) ?>" class="box-input-3" />

@@ -121,6 +121,9 @@ return [
 'likes'            => 'Likes',
 'thread_locked'    => 'Thread is locked.',
 'board'            => 'Board',
+'frconfirm'            => 'Accept',
+'frdecline'            => 'Decline',
+'wantfriend'            => 'wants to be friend',
 
 ];
 $__i18n = [

@@ -13,13 +13,15 @@
   const CACHE_KEY    = 'hhGlobalChat.cache';
   const MAX_CACHE    = 200;
 
+  // NEU: Einheitlicher Selector für alle externen Trigger
+  const TOGGLE_SELECTOR = '[data-toggle-global-chat],[data-chat-toggle]';
+
   let lastId    = parseInt(localStorage.getItem(LAST_ID_KEY) || '0', 10) || 0;
   let minimized = localStorage.getItem(MIN_KEY) === '1';
   let isOpen    = localStorage.getItem(OPEN_KEY) === '1';
   let pollTimer = null;
   let ME = null;
 
-  // ---------- Emoji-Daten ----------
   const EMOJI_CATEGORIES = {
     'Smileys': ['😀','😁','😂','🤣','😊','😅','😉','😍','😘','😜','🤪','😎','🤩','🥳','🥲','😭','😡','🤔','😴','😮','😳','😬'],
     'Gesten': ['👍','👎','👏','🙏','🙌','👌','✌️','🤞','👊','🤝','🤙','💪','🫶','☝️','👇','👈','👉'],
@@ -70,10 +72,11 @@
   `;
   document.body.appendChild(root);
 
-  // externer Toggle-Button aus Theme
-  const externalToggle =
-    document.querySelector('[data-chat-toggle]') ||
-    document.querySelector('a.nav-item.btn-c.btn-c-3xl.text-white.transition-1');
+  // --- WEG: single externalToggle (war Ursache) ---
+  // NEU: Helper für alle aktuellen Trigger
+  function getExternalToggles() {
+    return Array.from(document.querySelectorAll(TOGGLE_SELECTOR));
+  }
 
   const header     = root.querySelector('.hhgc-header');
   const messagesEl = root.querySelector('#hhgc-messages');
@@ -114,30 +117,27 @@
     return [Math.max(pad, Math.min(x, maxX)), Math.max(pad, Math.min(y, maxY))];
   }
   function applyResponsiveLayout() {
-  if (window.innerWidth <= 768) {
-    // Inline-Positionen entfernen, damit CSS 'inset:0' greift
-    root.style.left = '';
-    root.style.top = '';
-    root.style.right = '';
-    root.style.bottom = '';
-  } else {
-    // Auf Desktop wieder die gespeicherte Position verwenden
-    restorePos();
+    if (window.innerWidth <= 768) {
+      root.style.left = '';
+      root.style.top = '';
+      root.style.right = '';
+      root.style.bottom = '';
+    } else {
+      restorePos();
+    }
   }
-}
-let drag = null;
-header.addEventListener('mousedown', (e) => {
-  // Auf Mobile kein Drag
-  if (window.innerWidth <= 768) return;
-  drag = {
-    startX: e.clientX,
-    startY: e.clientY,
-    startLeft: root.offsetLeft,
-    startTop: root.offsetTop
-  };
-  document.body.classList.add('hhgc-dragging');
-  e.preventDefault();
-});
+  let drag = null;
+  header.addEventListener('mousedown', (e) => {
+    if (window.innerWidth <= 768) return;
+    drag = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startLeft: root.offsetLeft,
+      startTop: root.offsetTop
+    };
+    document.body.classList.add('hhgc-dragging');
+    e.preventDefault();
+  });
   window.addEventListener('mousemove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.startX;
@@ -167,33 +167,32 @@ header.addEventListener('mousedown', (e) => {
       pollTimer = null;
     }
   }
-function setOpen(open) {
-  isOpen = !!open;
-  localStorage.setItem(OPEN_KEY, isOpen ? '1' : '0');
-  root.style.display = isOpen ? 'block' : 'none';
 
-  if (externalToggle) {
-    externalToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    externalToggle.classList.toggle('is-active', isOpen);
-  }
+  function setOpen(open) {
+    isOpen = !!open;
+    localStorage.setItem(OPEN_KEY, isOpen ? '1' : '0');
+    root.style.display = isOpen ? 'block' : 'none';
 
-  // << NEU: Seite „einfrieren“ wenn offen
-  document.documentElement.classList.toggle('hhgc-open', isOpen);
-  document.body.classList.toggle('hhgc-open', isOpen);
+    // NEU: auf ALLE Trigger anwenden
+    getExternalToggles().forEach(t => {
+      t.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      t.classList.toggle('is-active', isOpen);
+    });
 
-  if (isOpen) {
-    // Auf Mobile sicherstellen, dass keine Inline-Left/Top stören
-    if (window.innerWidth <= 768) {
-      root.style.left = root.style.top = root.style.right = root.style.bottom = '';
+    document.documentElement.classList.toggle('hhgc-open', isOpen);
+    document.body.classList.toggle('hhgc-open', isOpen);
+
+    if (isOpen) {
+      if (window.innerWidth <= 768) {
+        root.style.left = root.style.top = root.style.right = root.style.bottom = '';
+      }
+      hydrateFromCache();
+      startPolling();
+    } else {
+      stopPolling();
+      hidePicker();
     }
-    hydrateFromCache();
-    startPolling();
-  } else {
-    stopPolling();
-    hidePicker();
   }
-}
-
 
   function setMinimized(min) {
     minimized = !!min;
@@ -202,12 +201,14 @@ function setOpen(open) {
   }
   btnMin.addEventListener('click', () => setMinimized(!minimized));
   btnClose.addEventListener('click', () => setOpen(false));
-  if (externalToggle) {
-    externalToggle.addEventListener('click', (e) => {
-      if (externalToggle.tagName === 'A') e.preventDefault();
-      setOpen(!isOpen);
-    });
-  }
+
+  // NEU: Delegation – funktioniert für Button & Link, mobil robust
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest?.(TOGGLE_SELECTOR);
+    if (!t) return;
+    e.preventDefault();
+    setOpen(!isOpen);
+  }, true); // Capture-Phase
 
   // ---------- Emoji Picker ----------
   function renderEmojiPanel() {
@@ -241,48 +242,28 @@ function setOpen(open) {
     el.selectionStart = el.selectionEnd = pos;
     el.focus();
   }
-  function showPicker() {
-    picker.hidden = false;
-    picker.setAttribute('aria-hidden', 'false');
-  }
-  function hidePicker() {
-    picker.hidden = true;
-    picker.setAttribute('aria-hidden', 'true');
-  }
-  btnEmoji.addEventListener('click', () => {
-    if (picker.hidden) { showPicker(); } else { hidePicker(); }
-  });
+  function showPicker() { picker.hidden = false; picker.setAttribute('aria-hidden', 'false'); }
+  function hidePicker() { picker.hidden = true; picker.setAttribute('aria-hidden', 'true'); }
+  btnEmoji.addEventListener('click', () => { picker.hidden ? showPicker() : hidePicker(); });
   document.addEventListener('click', (e) => {
     if (picker.hidden) return;
-    if (!picker.contains(e.target) && !btnEmoji.contains(e.target)) {
-      hidePicker();
-    }
+    if (!picker.contains(e.target) && !btnEmoji.contains(e.target)) hidePicker();
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !picker.hidden) hidePicker();
-  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !picker.hidden) hidePicker(); });
 
   // Tabs
-tabsEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-tab]');
-  if (!btn) return;
-
-  // Active Tab markieren
-  tabsEl.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
-  const tab = btn.getAttribute('data-tab');
-
-  // Panels umschalten
-  root.querySelectorAll('.hhgc-panel').forEach(p => {
-    p.style.display = (p.getAttribute('data-panel') === tab ? 'block' : 'none');
+  tabsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    tabsEl.querySelectorAll('button').forEach(b => b.classList.toggle('is-active', b === btn));
+    const tab = btn.getAttribute('data-tab');
+    root.querySelectorAll('.hhgc-panel').forEach(p => {
+      p.style.display = (p.getAttribute('data-panel') === tab ? 'block' : 'none');
+    });
+    if (tab === 'emoji'   && !panelEmoji?.dataset.ready) { renderEmojiPanel(); panelEmoji.dataset.ready = '1'; }
+    if (tab === 'gifs'    && !panelGifs?.dataset.ready)  { renderGifPanel();   panelGifs.dataset.ready  = '1'; }
+    if (tab === 'stickers'&& !panelStk?.dataset.ready)   { loadStickers();     panelStk.dataset.ready   = '1'; }
   });
-
-  // Lazy-Init je Panel (nur 1x)
-  if (tab === 'emoji'   && !panelEmoji?.dataset.ready) { renderEmojiPanel(); panelEmoji.dataset.ready = '1'; }
-  if (tab === 'gifs'    && !panelGifs?.dataset.ready)  { renderGifPanel();   panelGifs.dataset.ready  = '1'; }
-  if (tab === 'stickers'&& !panelStk?.dataset.ready)   { loadStickers();     panelStk.dataset.ready   = '1'; }
-});
-
-  // Standard sichtbar
   root.querySelectorAll('.hhgc-panel').forEach(p =>
     p.style.display = (p.getAttribute('data-panel') === 'emoji' ? 'block' : 'none')
   );
@@ -308,38 +289,27 @@ tabsEl.addEventListener('click', (e) => {
     }
   }
 
-function renderRich(text) {
-  const abs = (u) => {
-    try { return new URL(u, window.location.origin).toString(); }
-    catch { return u; }
-  };
-
-  // 1) http(s) URLs
-  const httpRe = /(https?:\/\/[^\s]+)/g;
-  let html = text.split(/\n/).map(line => {
-    return line.replace(httpRe, (u) => {
-      const low = u.toLowerCase();
-      if (/\.(gif|png|jpe?g|webp)$/.test(low)) {
-        return `<img class="hhgc-embed" src="${u}" alt="">`;
-      }
-      if (/\.(mp4|webm)$/.test(low)) {
-        return `<video class="hhgc-embed" src="${u}" autoplay muted loop playsinline></video>`;
-      }
-      return `<a href="${u}" target="_blank" rel="noopener">${u}</a>`;
-    });
-  }).join('<br>');
-
-  // 2) site-relative Pfade (beginnend mit "/")
-  //    nur wenn sie nach obiger Runde noch als Text dastehen
-  const relImgRe = /(^|[\s>])((\/[^\s"'<>]+\.(?:gif|png|jpe?g|webp)))/gi;
-  const relVidRe = /(^|[\s>])((\/[^\s"'<>]+\.(?:mp4|webm)))/gi;
-  html = html
-    .replace(relImgRe, (m, pre, u) => `${pre}<img class="hhgc-embed" src="${abs(u)}" alt="">`)
-    .replace(relVidRe, (m, pre, u) => `${pre}<video class="hhgc-embed" src="${abs(u)}" autoplay muted loop playsinline></video>`);
-
-  return html;
-}
-
+  function renderRich(text) {
+    const abs = (u) => {
+      try { return new URL(u, window.location.origin).toString(); }
+      catch { return u; }
+    };
+    const httpRe = /(https?:\/\/[^\s]+)/g;
+    let html = text.split(/\n/).map(line => {
+      return line.replace(httpRe, (u) => {
+        const low = u.toLowerCase();
+        if (/\.(gif|png|jpe?g|webp)$/.test(low)) return `<img class="hhgc-embed" src="${u}" alt="">`;
+        if (/\.(mp4|webm)$/.test(low)) return `<video class="hhgc-embed" src="${u}" autoplay muted loop playsinline></video>`;
+        return `<a href="${u}" target="_blank" rel="noopener">${u}</a>`;
+      });
+    }).join('<br>');
+    const relImgRe = /(^|[\s>])((\/[^\s"'<>]+\.(?:gif|png|jpe?g|webp)))/gi;
+    const relVidRe = /(^|[\s>])((\/[^\s"'<>]+\.(?:mp4|webm)))/gi;
+    html = html
+      .replace(relImgRe, (m, pre, u) => `${pre}<img class="hhgc-embed" src="${abs(u)}" alt="">`)
+      .replace(relVidRe, (m, pre, u) => `${pre}<video class="hhgc-embed" src="${abs(u)}" autoplay muted loop playsinline></video>`);
+    return html;
+  }
 
   function appendMessage(m, skipCache = false) {
     const item = document.createElement('div');
@@ -369,32 +339,33 @@ function renderRich(text) {
       saveCache(list);
     }
   }
-async function sendQuick(text) {
-  try {
-    const res = await fetch(APP_BASE + '/api/chat/global_send.php', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ message: text, csrf: CSRF }).toString()
-    });
-    const raw = await res.text();
-    let data; try { data = JSON.parse(raw); } catch { data = null; }
-    if (data && data.ok && data.message) {
-      data.message.is_me = true;
-      appendMessage(data.message);
-      lastId = Math.max(lastId, Number(data.message.id) || 0);
-      localStorage.setItem(LAST_ID_KEY, String(lastId));
-      hidePicker();
-      return true;
-    } else {
-      console.error('Quick send failed:', data || raw);
+
+  async function sendQuick(text) {
+    try {
+      const res = await fetch(APP_BASE + '/api/chat/global_send.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ message: text, csrf: CSRF }).toString()
+      });
+      const raw = await res.text();
+      let data; try { data = JSON.parse(raw); } catch { data = null; }
+      if (data && data.ok && data.message) {
+        data.message.is_me = true;
+        appendMessage(data.message);
+        lastId = Math.max(lastId, Number(data.message.id) || 0);
+        localStorage.setItem(LAST_ID_KEY, String(lastId));
+        hidePicker();
+        return true;
+      } else {
+        console.error('Quick send failed:', data || raw);
+        return false;
+      }
+    } catch (e) {
+      console.error('Quick send error:', e);
       return false;
     }
-  } catch (e) {
-    console.error('Quick send error:', e);
-    return false;
   }
-}
 
   function linkify(text) {
     return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
@@ -476,198 +447,186 @@ async function sendQuick(text) {
     }
   });
 
-  // ---------- GIF-Panel ----------
-function renderGifPanel() {
-  if (!panelGifs) return;
-
-  // HTML Gerüst
-  panelGifs.innerHTML = `
-    <form class="hhgc-gif-search">
-      <input type="text" placeholder="GIF suchen …" class="hhgc-gif-q" />
-      <button type="submit">Suchen</button>
-    </form>
-    <div class="hhgc-grid" data-kind="gifs"></div>
-    <div class="hhgc-note small"></div>
-  `;
-
-  const grid = panelGifs.querySelector('.hhgc-grid');
-  const note = panelGifs.querySelector('.hhgc-note');
-  const inputQ = panelGifs.querySelector('.hhgc-gif-q');
-
-  async function loadGifs(q='') {
-    if (!grid || !note) return;
-    grid.innerHTML = '<div class="hhgc-loading">Lade…</div>';
-    note.textContent = '';
-    try {
-      const url = new URL(APP_BASE + '/api/chat/gifs_search.php', window.location.origin);
-      if (q) url.searchParams.set('q', q);
-
-      const res = await fetch(url.toString(), { credentials: 'include' });
-      const raw = await res.text();
-      console.log('[GIFS RAW]', raw);
-
-      let data; try { data = JSON.parse(raw); } catch { data = null; }
-      grid.innerHTML = '';
-
-      if (!data) { note.textContent = 'Fehler: Ungültige JSON‑Antwort.'; return; }
-      if (!data.ok) {
-        const dbg = data.debug ? ` (${data.debug.err || ('HTTP '+data.debug.http)} via ${data.debug.via})` : '';
-        note.textContent = 'Fehler: ' + (data.error || 'Unbekannt') + dbg;
-        return;
-      }
-
-      const items = Array.isArray(data.items) ? data.items : [];
-      if (!items.length) {
-        note.textContent = data.hint === 'NO_API_KEY' ? 'Kein GIF‑API‑Key in config.php.' : 'Keine Ergebnisse.';
-        return;
-      }
-
-      for (const it of items) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'hhgc-media';
-        if (typeof it.thumb === 'string' && it.thumb.endsWith('.mp4')) {
-          btn.innerHTML = `<video muted autoplay loop playsinline src="${it.thumb}"></video>`;
-        } else {
-          btn.innerHTML = `<img loading="lazy" src="${it.thumb || it.url}" alt="gif">`;
-        }
- btn.addEventListener('click', async () => {
-  const url = (it.url || '').trim();
-  if (!url) return;
-  await sendQuick(url);
-});
-
-        grid.appendChild(btn);
-      }
-    } catch (e) {
-      grid.innerHTML = '';
-      note.textContent = 'Netzwerkfehler.';
-    }
-  }
-
-  // Event‑Delegation: verhindert "form ist null"
-  panelGifs.addEventListener('submit', (e) => {
-    const formEl = e.target.closest('.hhgc-gif-search');
-    if (!formEl) return;
-    e.preventDefault();
-    const q = (panelGifs.querySelector('.hhgc-gif-q')?.value || '').trim();
-    loadGifs(q);
-  }, { once: false });
-
-  // Initial Trending
-  loadGifs('');
-}
-
-
-
-  // ---------- Sticker-Panel ----------
-async function loadStickers() {
-  panelStk.innerHTML = `
-    <div class="hhgc-stk-head">
-      <div class="hhgc-stk-title">Sticker</div>
-      <form class="hhgc-stk-upload" hidden>
-        <input type="file" accept="image/png,image/webp,image/jpeg,image/gif" class="hhgc-stk-file">
-        <input type="text" class="hhgc-stk-name" placeholder="Name (optional)" />
-        <button type="submit">Hochladen</button>
+  function renderGifPanel() {
+    if (!panelGifs) return;
+    panelGifs.innerHTML = `
+      <form class="hhgc-gif-search">
+        <input type="text" placeholder="GIF suchen …" class="hhgc-gif-q" />
+        <button type="submit">Suchen</button>
       </form>
-    </div>
-    <div class="hhgc-grid" data-kind="stickers"></div>
-    <div class="hhgc-note small"></div>
-  `;
-  const grid = panelStk.querySelector('.hhgc-grid');
-  const note = panelStk.querySelector('.hhgc-note');
-  const upForm = panelStk.querySelector('.hhgc-stk-upload');
-  const upFile = panelStk.querySelector('.hhgc-stk-file');
-  const upName = panelStk.querySelector('.hhgc-stk-name');
+      <div class="hhgc-grid" data-kind="gifs"></div>
+      <div class="hhgc-note small"></div>
+    `;
+    const grid = panelGifs.querySelector('.hhgc-grid');
+    const note = panelGifs.querySelector('.hhgc-note');
+    const inputQ = panelGifs.querySelector('.hhgc-gif-q');
 
-  // Upload nur für Mods/Admins anzeigen
-  try {
-    // ME ist global gesetzt in init(); falls nicht, holen
-    if (!ME) { ME = await fetchMe(); }
-    const canManage = ME && ['moderator','administrator','admin'].includes((ME.role||'').toLowerCase());
-    if (canManage) { upForm.hidden = false; }
-  } catch {}
-
-  async function refresh() {
-    grid.innerHTML = '<div class="hhgc-loading">Lade…</div>';
-    note.textContent = '';
-    try {
-      const res = await fetch(APP_BASE + '/api/chat/stickers_list.php', { credentials: 'include' });
-      const data = await res.json();
-      grid.innerHTML = '';
-      if (!data.ok) { note.textContent = 'Fehler beim Laden der Sticker.'; return; }
-      const canManage = ME && ['moderator','administrator','admin'].includes((ME.role||'').toLowerCase());
-
-      (data.items || []).forEach(it => {
-        const wrap = document.createElement('div');
-        wrap.className = 'hhgc-media hhgc-stk-item';
-        wrap.innerHTML = `
-          <img loading="lazy" src="${it.url}" alt="${it.name}">
-          ${canManage ? '<button class="hhgc-stk-del" title="Löschen">×</button>' : ''}
-        `;
-wrap.querySelector('img').addEventListener('click', async () => {
-  const url = (it.url || '').trim();
-  if (!url) return;
-  await sendQuick(url);
-});
-
-        if (canManage) {
-          wrap.querySelector('.hhgc-stk-del').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (!confirm('Diesen Sticker löschen?')) return;
-            const fd = new FormData(); fd.append('file', it.file);
-            const del = await fetch(APP_BASE + '/api/chat/stickers_delete.php', {
-              method: 'POST', credentials: 'include', body: fd
-            }).then(r=>r.json()).catch(()=>null);
-            if (del && del.ok) wrap.remove(); else alert('Löschen fehlgeschlagen');
-          });
+    async function loadGifs(q='') {
+      if (!grid || !note) return;
+      grid.innerHTML = '<div class="hhgc-loading">Lade…</div>';
+      note.textContent = '';
+      try {
+        const url = new URL(APP_BASE + '/api/chat/gifs_search.php', window.location.origin);
+        if (q) url.searchParams.set('q', q);
+        const res = await fetch(url.toString(), { credentials: 'include' });
+        const raw = await res.text();
+        let data; try { data = JSON.parse(raw); } catch { data = null; }
+        grid.innerHTML = '';
+        if (!data) { note.textContent = 'Fehler: Ungültige JSON-Antwort.'; return; }
+        if (!data.ok) {
+          const dbg = data.debug ? ` (${data.debug.err || ('HTTP '+data.debug.http)} via ${data.debug.via})` : '';
+          note.textContent = 'Fehler: ' + (data.error || 'Unbekannt') + dbg;
+          return;
         }
-        grid.appendChild(wrap);
-      });
-      if (!grid.children.length) {
-        grid.innerHTML = '<div class="hhgc-empty-note">Noch keine Sticker im Ordner /uploads/stickers.</div>';
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          note.textContent = data.hint === 'NO_API_KEY' ? 'Kein GIF-API-Key in config.php.' : 'Keine Ergebnisse.';
+          return;
+        }
+        for (const it of items) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'hhgc-media';
+          if (typeof it.thumb === 'string' && it.thumb.endsWith('.mp4')) {
+            btn.innerHTML = `<video muted autoplay loop playsinline src="${it.thumb}"></video>`;
+          } else {
+            btn.innerHTML = `<img loading="lazy" src="${it.thumb || it.url}" alt="gif">`;
+          }
+          btn.addEventListener('click', async () => {
+            const url = (it.url || '').trim();
+            if (!url) return;
+            await sendQuick(url);
+          });
+          grid.appendChild(btn);
+        }
+      } catch (e) {
+        grid.innerHTML = '';
+        note.textContent = 'Netzwerkfehler.';
       }
-    } catch { note.textContent = 'Netzwerkfehler.'; }
-  }
+    }
 
-  if (upForm) {
-    upForm.addEventListener('submit', async (e) => {
+    panelGifs.addEventListener('submit', (e) => {
+      const formEl = e.target.closest('.hhgc-gif-search');
+      if (!formEl) return;
       e.preventDefault();
-      if (!upFile.files || !upFile.files[0]) return;
-      const fd = new FormData();
-      fd.append('file', upFile.files[0]);
-      if (upName.value.trim()) fd.append('name', upName.value.trim());
-      const res = await fetch(APP_BASE + '/api/chat/stickers_upload.php', {
-        method: 'POST', credentials: 'include', body: fd
-      });
-      const data = await res.json().catch(()=>null);
-      if (data && data.ok) {
-        upFile.value = ''; upName.value = '';
-        refresh();
-      } else {
-        alert('Upload fehlgeschlagen' + (data?.error ? ': ' + data.error : ''));
-      }
-    });
+      const q = (panelGifs.querySelector('.hhgc-gif-q')?.value || '').trim();
+      loadGifs(q);
+    }, { once: false });
+
+    loadGifs('');
   }
 
-  refresh();
-}
+  async function loadStickers() {
+    panelStk.innerHTML = `
+      <div class="hhgc-stk-head">
+        <div class="hhgc-stk-title">Sticker</div>
+        <form class="hhgc-stk-upload" hidden>
+          <input type="file" accept="image/png,image/webp,image/jpeg,image/gif" class="hhgc-stk-file">
+          <input type="text" class="hhgc-stk-name" placeholder="Name (optional)" />
+          <button type="submit">Hochladen</button>
+        </form>
+      </div>
+      <div class="hhgc-grid" data-kind="stickers"></div>
+      <div class="hhgc-note small"></div>
+    `;
+    const grid = panelStk.querySelector('.hhgc-grid');
+    const note = panelStk.querySelector('.hhgc-note');
+    const upForm = panelStk.querySelector('.hhgc-stk-upload');
+    const upFile = panelStk.querySelector('.hhgc-stk-file');
+    const upName = panelStk.querySelector('.hhgc-stk-name');
 
+    try {
+      if (!ME) { ME = await fetchMe(); }
+      const canManage = ME && ['moderator','administrator','admin'].includes((ME.role||'').toLowerCase());
+      if (canManage) { upForm.hidden = false; }
+    } catch {}
+
+    async function refresh() {
+      grid.innerHTML = '<div class="hhgc-loading">Lade…</div>';
+      note.textContent = '';
+      try {
+        const res = await fetch(APP_BASE + '/api/chat/stickers_list.php', { credentials: 'include' });
+        const data = await res.json();
+        grid.innerHTML = '';
+        if (!data.ok) { note.textContent = 'Fehler beim Laden der Sticker.'; return; }
+        const canManage = ME && ['moderator','administrator','admin'].includes((ME.role||'').toLowerCase());
+
+        (data.items || []).forEach(it => {
+          const wrap = document.createElement('div');
+          wrap.className = 'hhgc-media hhgc-stk-item';
+          wrap.innerHTML = `
+            <img loading="lazy" src="${it.url}" alt="${it.name}">
+            ${canManage ? '<button class="hhgc-stk-del" title="Löschen">×</button>' : ''}
+          `;
+          wrap.querySelector('img').addEventListener('click', async () => {
+            const url = (it.url || '').trim();
+            if (!url) return;
+            await sendQuick(url);
+          });
+          if (canManage) {
+            wrap.querySelector('.hhgc-stk-del').addEventListener('click', async (e) => {
+              e.stopPropagation();
+              if (!confirm('Diesen Sticker löschen?')) return;
+              const fd = new FormData(); fd.append('file', it.file);
+              const del = await fetch(APP_BASE + '/api/chat/stickers_delete.php', {
+                method: 'POST', credentials: 'include', body: fd
+              }).then(r=>r.json()).catch(()=>null);
+              if (del && del.ok) wrap.remove(); else alert('Löschen fehlgeschlagen');
+            });
+          }
+          grid.appendChild(wrap);
+        });
+        if (!grid.children.length) {
+          grid.innerHTML = '<div class="hhgc-empty-note">Noch keine Sticker im Ordner /uploads/stickers.</div>';
+        }
+      } catch { note.textContent = 'Netzwerkfehler.'; }
+    }
+
+    if (upForm) {
+      upForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!upFile.files || !upFile.files[0]) return;
+        const fd = new FormData();
+        fd.append('file', upFile.files[0]);
+        if (upName.value.trim()) fd.append('name', upName.value.trim());
+        const res = await fetch(APP_BASE + '/api/chat/stickers_upload.php', {
+          method: 'POST', credentials: 'include', body: fd
+        });
+        const data = await res.json().catch(()=>null);
+        if (data && data.ok) {
+          upFile.value = ''; upName.value = '';
+          refresh();
+        } else {
+          alert('Upload fehlgeschlagen' + (data?.error ? ': ' + data.error : ''));
+        }
+      });
+    }
+
+    refresh();
+  }
 
   // ========== Init ==========
   async function init() {
     restorePos();
+    applyResponsiveLayout();
+    window.addEventListener('resize', applyResponsiveLayout);
+
     setMinimized(minimized);
 
     try {
       ME = await fetchMe();
     } catch {
       root.style.display = 'none';
-      if (externalToggle) {
-        externalToggle.setAttribute('aria-disabled', 'true');
-        externalToggle.classList.add('is-disabled');
-        externalToggle.addEventListener('click', (e) => e.preventDefault());
-      }
+      // NEU: alle Trigger stilllegen, wenn nicht eingeloggt
+      getExternalToggles().forEach(t => {
+        t.setAttribute('aria-disabled', 'true');
+        t.classList.add('is-disabled');
+      });
+      // Klicks auf Trigger abfangen
+      document.addEventListener('click', (e) => {
+        const t = e.target.closest?.(TOGGLE_SELECTOR);
+        if (t) e.preventDefault();
+      }, true);
       return;
     }
 

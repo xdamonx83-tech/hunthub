@@ -379,7 +379,7 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
 })();
 </script>
 
-        <div class="grid grid-cols-12 gap-30p bg-b-neutral-3 rounded-12 pb-30p" style="margin-top:-240px;">
+        <div class="grid grid-cols-12 grid-mobile gap-30p bg-b-neutral-3 rounded-12 pb-30p">
             <div class="4xl:col-start-2 4xl:col-end-12 col-span-12 max-4xl:px-48p">
                 <div class="relative flex 3xl:items-end max-3xl:items-center 3xl:justify-between max-3xl:flex-col gap-30p 3xl:mt-[70px] xl:-mt-52 lg:-mt-44 md:-mt-36 sm:-mt-30 -mt-20 4xl:mb-[70px] mb-60p">
 

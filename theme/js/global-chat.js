@@ -280,9 +280,12 @@ if (!window.toggleGlobalChat) {
   window.addEventListener('load', () => {
     loadInitial();
     setInterval(poll, 4000);
-    document.querySelectorAll('[data-toggle-global-chat]').forEach(btn => {
-      btn.addEventListener('click', () => window.toggleGlobalChat());
-    });
+document.addEventListener('click', (e) => {
+ const t = e.target.closest('[data-toggle-global-chat],[data-chat-toggle]');
+ if (!t) return;
+ e.preventDefault();
+ window.toggleGlobalChat();
+ });
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 })();

@@ -31,6 +31,65 @@ function current_url_with_lang(string $lang): string {
   $q = http_build_query($qs);
   return $scheme . '://' . $host . $path . ($q ? ('?' . $q) : '');
 }
+
+function is_mobile_request(): bool {
+    // Manuelle Überschreibung zum Testen: ?view=mobile / ?view=desktop
+    $force = $_GET['view'] ?? null;
+    if ($force === 'mobile')  return true;
+    if ($force === 'desktop') return false;
+
+    // > Für Caches: wir variieren auf UA und CH
+    header('Vary: User-Agent, Sec-CH-UA-Platform, Sec-CH-UA-Mobile', false);
+
+    // 1) Client Hints (nur über HTTPS und wenn Browser sie sendet)
+    $chMobile   = $_SERVER['HTTP_SEC_CH_UA_MOBILE']   ?? '';
+    $chPlatform = $_SERVER['HTTP_SEC_CH_UA_PLATFORM'] ?? '';
+
+    // Sec-CH-UA-Mobile kommt typischerweise als "?1" für mobile
+    if ($chMobile !== '') {
+        if (strpos($chMobile, '?1') !== false || $chMobile === '1') {
+            return true;
+        }
+        // iPad/Tablet kann "?0" sein; unten fällt der UA-Regex zurück
+    }
+
+    // 2) User-Agent Fallback (breiter Satz inkl. Tablets + iPadOS 13+)
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+    // Klassische Mobiles/Tablets
+    $mobileRegex = '/Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Windows Phone|Opera Mini|Opera Mobi|Mobi/i';
+    $tabletRegex = '/iPad|Tablet|Nexus 7|Nexus 9|Nexus 10|SM-T|Kindle|Silk|PlayBook/i';
+
+    if (preg_match($mobileRegex, $ua) || preg_match($tabletRegex, $ua)) {
+        return true;
+    }
+
+    // iPadOS 13+: meldet sich als "Macintosh" + "Mobile/<Build>" in Safari
+    if (stripos($ua, 'Macintosh') !== false && stripos($ua, 'Mobile/') !== false && stripos($ua, 'Safari') !== false) {
+        return true;
+    }
+
+    // Optional: wenn CH-Platform "Android" oder "iOS" enthält
+    if ($chPlatform) {
+        $p = strtolower($chPlatform);
+        if (strpos($p, 'android') !== false || strpos($p, 'ios') !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Nutzung
+if (is_mobile_request()) {
+    include __DIR__ . '/partials/bottom_bar.php';
+} else {
+  
+}
+
+$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$is_mobile = (bool) preg_match('/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i', $ua);
+
 ?>
 
 
@@ -97,7 +156,15 @@ window.APP_BASE = document.querySelector('meta[name="app-base"]')?.content || ''
             --overlay-color: rgba(26, 26, 26, 0.98);
         }
 
-
+  @media (min-width: 1024px) {
+    .mobile-bottom-bar { display: none !important; }
+	
+  }
+  /* Desktop-only */
+  @media (max-width: 1023.98px) {
+    .nav-item { display: none !important; }
+	.grid-mobile { margin-top:-240px !important; }
+  }
 
         /* Preloader Container */
         #preloader {
@@ -444,23 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
           <div class="3xl:col-span-6 xl:col-span-7 flex items-center xl:justify-between justify-end w-full">
-            <a href="#"
-              class="hidden xl:inline-flex items-center gap-3 pl-1 py-1 pr-6  rounded-full bg-[rgba(242,150,32,0.10)] text-w-neutral-1 text-base">
-              <span class="size-48p flex-c text-b-neutral-4 bg-primary rounded-full icon-32">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                  class="icon icon-tabler icons-tabler-outline icon-tabler-speakerphone">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M18 8a3 3 0 0 1 0 6" />
-                  <path d="M10 8v11a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-5" />
-                  <path
-                    d="M12 8h0l4.524 -3.77a.9 .9 0 0 1 1.476 .692v12.156a.9 .9 0 0 1 -1.476 .692l-4.524 -3.77h-8a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h8" />
-                </svg>
-              </span>
 
-
-
-            </a>
 
 <?php
 // Aktuelle Sprache robust ermitteln (dein Original-Code)
@@ -707,7 +758,7 @@ $label = $lang === 'en' ? 'English' : 'Deutsch';
 
 
 
-<?php include __DIR__ . '/partials/bottom_bar.php'; ?>
+
 
 
 
@@ -864,7 +915,7 @@ $label = $lang === 'en' ? 'English' : 'Deutsch';
 </script>
 
 
-
+<script src="<?= $APP_BASE; ?>/assets/js/global-chat.js" defer></script>
 
 
 </body>

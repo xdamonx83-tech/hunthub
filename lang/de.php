@@ -40,6 +40,7 @@ return [
   'wins'  => 'Gewonnen',
   'level'  => 'Rang',
   'message'  => 'Nachricht',
+  'messages'  => 'Nachrichten',
   'posts'  => 'Beiträge',
   'arch'  => 'Erfolge',
   'noposts'  => 'Keine Beiträge',
@@ -108,6 +109,9 @@ return [
 'likes'            => 'Likes',
 'thread_locked'    => 'Thread ist gesperrt.',
 'board'            => 'Board',
+'frconfirm'            => 'Annehmeen',
+'frdecline'            => 'Ablehnen',
+'wantfriend'            => 'möchte mit dir befreundet sein',
 
 ];
 $__i18n = [

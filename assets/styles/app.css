@@ -293,6 +293,7 @@ html.hhgc-open, body.hhgc-open {
   #hh-global-chat {
     position: fixed !important;
     inset: 0 !important;
+	z-index: 999999999 !important;
     /* dynamic viewport vermeidet iOS/Chrome-Leisten-Probleme */
     width: 100dvw !important;
     height: 100dvh !important;
@@ -322,6 +323,7 @@ html.hhgc-open, body.hhgc-open {
     height: calc(100% - 56px); /* an deine Headerhöhe anpassen */
   }
 }
+#global-chat.hidden, #hh-global-chat.hidden { display: none !important; }
 #profile-content.is-loading { position: relative; }
 #profile-content.is-loading::after{
   content: 'Lädt…';

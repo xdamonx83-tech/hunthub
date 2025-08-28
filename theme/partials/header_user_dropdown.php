@@ -11,7 +11,7 @@ $avatar      = !empty($me['avatar_path']) ? $me['avatar_path'] : '/assets/images
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <script>window.APP_BASE = "<?= htmlspecialchars($APP_BASE ?? '', ENT_QUOTES) ?>";</script>
-<script src="<?= $APP_BASE; ?>/assets/js/global-chat.js" defer></script>
+
 <meta name="csrf" content="<?= htmlspecialchars($csrf) ?>">
 <style>
 /* kleine Hilfsstyles für Felder im Dropdown */
@@ -1041,13 +1041,13 @@ form?.addEventListener('submit', async (ev) => {
                 </button>
 				
                 <div class="flex flex-col gap-2 rounded-full bg-b-neutral-1 w-fit p-2 shrink-0">
-                    <a data-chat-toggle class="nav-item btn-c btn-c-3xl text-white  transition-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                    <a data-toggle-global-chat class="nav-item btn-c btn-c-3xl text-white  transition-1">
+                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-flame">
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-messages">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path
-                                d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" />
+                            <path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10" />
+                            <path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2" />
                         </svg>
                     </a>
                     <a href="/forum/boards.php" class="nav-item btn-c btn-c-3xl text-white  transition-1">
@@ -1063,7 +1063,7 @@ form?.addEventListener('submit', async (ev) => {
                             <path d="M3 13v-1a2 2 0 0 1 2 -2h2" />
                         </svg>
                     </a>
-                    <a href="saved.html" class="nav-item btn-c btn-c-3xl text-white  transition-1">
+                    <a  class="nav-item btn-c btn-c-3xl text-white  transition-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-bookmark">
@@ -1082,7 +1082,7 @@ form?.addEventListener('submit', async (ev) => {
                     </a>
                 </div>
                 <div class="flex flex-col gap-2 rounded-full w-fit p-2 shrink-0">
-                    <a href="marketplace-two.html" class="nav-item btn-c btn-c-3xl ">
+                    <a  class="nav-item btn-c btn-c-3xl ">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-diamond">
@@ -1091,17 +1091,9 @@ form?.addEventListener('submit', async (ev) => {
                             <path d="M10 12l-2 -2.2l.6 -1" />
                         </svg>
                     </a>
-                    <a href="chat.html" class="nav-item btn-c btn-c-3xl ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-messages">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M21 14l-3 -3h-7a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1h9a1 1 0 0 1 1 1v10" />
-                            <path d="M14 15v2a1 1 0 0 1 -1 1h-7l-3 3v-10a1 1 0 0 1 1 -1h2" />
-                        </svg>
-                    </a>
+       
 					
-                    <a href="profile.html" class="nav-item btn-c btn-c-3xl ">
+                    <a href="/profile.php" class="nav-item btn-c btn-c-3xl ">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-user">
