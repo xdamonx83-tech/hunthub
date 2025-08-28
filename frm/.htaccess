@@ -1,0 +1,22 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /frm/
+
+# 1) Echte Dateien/Ordner nie anfassen
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2) Passthrough für relative Pfade unter /frm/ … -> Root
+#    damit /frm/theme/*, /frm/assets/*, /frm/uploads/*, /frm/api/* funktionieren
+RewriteRule ^(theme/.*)$   /$1 [L]
+RewriteRule ^(assets/.*)$  /$1 [L]
+RewriteRule ^(uploads/.*)$ /$1 [L]
+RewriteRule ^(api/.*)$     /$1 [L]
+
+# 3) Sichtbare, hübsche Forum-Routen -> echte Skripte im /forum/ Ordner
+RewriteRule ^$                               /forum/boards.php                    [L,QSA]
+RewriteRule ^board/?$                        /forum/boards.php                    [L,QSA]  # optionaler Fallback
+RewriteRule ^board/([0-9]+)(?:-[^/]+)?/?$    /forum/board.php?b=$1                [L,QSA]
+RewriteRule ^board/([0-9]+)/page/([0-9]+)/?$ /forum/board.php?b=$1&page=$2        [L,QSA]
+RewriteRule ^thread/([0-9]+)(?:-[^/]+)?/?$   /forum/thread.php?t=$1               [L,QSA]
