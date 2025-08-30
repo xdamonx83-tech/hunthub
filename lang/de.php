@@ -29,7 +29,7 @@ return [
   'signup2'  => 'Konto erstellen',
   'already'  => 'Schon ein Konto? <a href="/">Einloggen</a>',
   'home'  => 'Startseite',
-  'community'  => 'Community',
+  'community'  => 'Forum',
   'quests'  => 'Quests & Ränge',
   'livestream'  => 'Live Stream',
   'chats'  => 'Chats',

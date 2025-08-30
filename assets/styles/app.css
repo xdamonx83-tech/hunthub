@@ -17,6 +17,131 @@
 /*!***********************************************************************************************************!*\
   !*** css ./node_modules/css-loader/dist/cjs.js!./node_modules/odometer/themes/odometer-theme-default.css ***!
   \***********************************************************************************************************/
+ 
+ /* Hunthub HHR – Stars */
+.hhr-stars { display:inline-flex; gap:4px; vertical-align:middle; }
+.hhr-star { width:18px; height:18px; display:inline-block; background-repeat:no-repeat; background-size:18px 18px; opacity:.35; }
+.hhr-star.is-on { opacity:1; }
+/* Simple SVG Data-URI Stern (gefüllt) – in deiner Farbwelt per filter anpassbar */
+.hhr-star { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='currentColor' d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/></svg>"); color:#e1c17a; }
+
+.flag{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600;
+  border:1px solid currentColor; line-height:1.4;
+}
+.flag-pin{    color:#f8b84a; background:rgba(248,184,74,.12); }
+.flag-locked{ color:#ef4444; background:rgba(239,68,68,.12); }
+.hhr-actions{display:flex;justify-content:center;gap:12px}
+.hhr-help{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:9999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);color:#e5e7eb;cursor:pointer
+}
+.hhr-help:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+.hhr-help i{font-size:20px;line-height:1}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.hh-modal__panel{
+  position:relative;
+  width:min(92vw,720px);
+  max-width:720px;
+  max-height:90vh;
+  background:#1a1c1f;
+  border:1px solid #2c2f33;
+  border-radius:14px;
+  box-shadow:0 20px 80px rgba(0,0,0,.55);
+  padding:22px;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+.hhr-summary-meta { font-size:0.95rem; opacity:0.9; display:flex; gap:8px; align-items:center; }
+.hhr-score { font-weight:600; }
+.hhr-count { opacity:0.75; }
+
+
+/* List */
+#hhr-list { display:flex; flex-direction:column; gap:12px; }
+.hhr-item { border:1px solid rgba(255,255,255,.08); background:rgba(0,0,0,.25); padding:12px; border-radius:10px; }
+.hhr-rater { display:flex; align-items:center; gap:10px; text-decoration:none; }
+.hhr-avatar { width:36px; height:36px; border-radius:50%; object-fit:cover; }
+.hhr-name { color:#fff; font-weight:600; }
+.hhr-score { margin-top:6px; display:flex; align-items:center; gap:6px; }
+.hhr-exact { font-size:.85rem; opacity:.75; }
+.hhr-comment { margin:8px 0 2px; white-space:pre-wrap; color:#ddd; }
+.hhr-time { font-size:.75rem; opacity:.6; }
+.hhr-empty { opacity:.7; padding:12px; text-align:center; }
+
+
+/* Formular */
+#hhr-form { border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.2); padding:12px; border-radius:10px; display:grid; gap:10px; }
+.hhr-field { display:grid; grid-template-columns: 160px 1fr; align-items:center; gap:10px; }
+.hhr-stars-input { display:flex; gap:6px; }
+.hhr-stars-input input { display:none; }
+.hhr-stars-input label { cursor:pointer; }
+.hhr-stars-input label i { pointer-events:none; }
+#hhr-form textarea { width:100%; min-height:80px; }
+#hhr-form .actions { display:flex; justify-content:flex-end; gap:10px; }
+
+
+/* Kompakte Anzeige unter Avatar */
+#hhr-summary.profile-header { display:flex; align-items:center; gap:6px; }
+#hhr-summary.profile-header .hhr-summary-meta { gap:6px; }
+/* HHR Stars – feste Goldfarbe, kein currentColor mehr */
+.hhr-stars { display:inline-flex; gap:4px; vertical-align:middle; }
+.hhr-star {
+width:18px; height:18px; display:inline-block;
+background-repeat:no-repeat; background-size:18px 18px; background-position:center;
+/* Harte Gold-Füllung im SVG (URL-encoded # -> %23) */
+background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23e1c17a' d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/></svg>");
+opacity:.28; /* "aus" */
+}
+.hhr-star.is-on { opacity:1; }
+:root { --hh-accent: #c98a2a; /* dein Orange, bei Bedarf einstellen */ }
+
+
+/* Sterne: bereits gesetzte Regeln ergänzen/überschreiben */
+.hhr-stars { display:inline-flex; gap:6px; vertical-align:middle; }
+.hhr-star { width:18px; height:18px; background-repeat:no-repeat; background-position:center; background-size:18px 18px; opacity:.28; transition:opacity .08s ease; }
+.hhr-star.is-on { opacity:1; }
+.hhr-stars-input { display:flex; gap:8px; align-items:center; }
+.hhr-stars-input label { cursor:pointer; display:inline-flex; }
+.hhr-stars-input input { display:none; }
+.hhr-stars-input label:focus-within .hhr-star { outline:2px solid var(--hh-accent); outline-offset:2px; border-radius:2px; }
+.hhr-stars, .hhr-star { color:#e1c17a; }
+.hhr-star { opacity:.28; transition:opacity .08s ease; }
+.hhr-star.is-on { opacity:1; }
+.hhr-stars-input label { cursor:pointer; }
+#hhr-form textarea{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:#e5e7eb;border-radius:12px;padding:12px 14px}
+#hhr-form textarea:focus{border-color:#c98a2a;box-shadow:0 0 0 3px color-mix(in srgb, #c98a2a 35%, transparent)}
+
+
+/* Textarea hübscher und im Dark-Theme passend */
+#hhr-form textarea {
+width:100%; min-height:140px; resize:vertical;
+padding:12px 14px; border-radius:12px;
+background: rgba(255,255,255,0.04);
+border: 1px solid rgba(255,255,255,0.12);
+color:#e5e7eb; outline:none;
+}
+#hhr-form textarea::placeholder { color: rgba(229,231,235,0.45); }
+#hhr-form textarea:focus { border-color: var(--hh-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--hh-accent) 35%, transparent); }
+
+
+/* Optional: größere Sterne im Header */
+.profile-header .hhr-star { width:20px; height:20px; background-size:20px 20px; }
+
+/* Optional: größere Sterne in Header */
+.profile-header .hhr-star { width:20px; height:20px; background-size:20px 20px; }
+/* Wenn Inline-SVG verwendet wird */
+.hhr-star { opacity:.28; }
+.hhr-star.is-on { opacity:1; }
+/* Farbe jetzt steuerbar per color: */
+.hhr-stars, .hhr-star { color:#e1c17a; }
+ 
+ 
  .hh-lang{ position:relative; display:inline-block; }
 .hh-lang__btn{
   display:flex; align-items:center; gap:.6rem;

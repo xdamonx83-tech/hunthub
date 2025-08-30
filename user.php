@@ -156,15 +156,10 @@ if (!$friendRows) {
     $friendRows = $stFr->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
-$requestedId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$requestedId = (int)$user['id'];                   // ← immer die echte Profil-ID verwenden
 $tab = $_GET['tab'] ?? 'posts';
-$validTabs = ['posts','matches','achv'];
+$validTabs = ['posts','bewertungen','achv'];
 if (!in_array($tab, $validTabs, true)) $tab = 'posts';
-
-if ($requestedId <= 0) {
-  if (!empty($USER['id'])) $requestedId = (int)$USER['id'];
-  else { http_response_code(404); exit('User not found'); }
-}
 
 $pdo = db();
 
@@ -235,7 +230,7 @@ if ($tab === 'posts') {
 $partialsDir = __DIR__ . '/partials';
 $map = [
   'posts'   => $partialsDir.'/profile.posts.php',
-  'matches' => $partialsDir.'/profile.matches.php', // (optional)
+  'bewertungen' => $partialsDir.'/profile.bewertungen.php', // (optional)
   'achv'    => $partialsDir.'/profile.achv.php',    // (optional)
 ];
 $partial = is_file($map[$tab] ?? '') ? $map[$tab] : $map['posts'];
@@ -411,6 +406,11 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
                             <p class="text-m-medium text-w-neutral-4">
                                 <?= $user['bio'] ? nl2br(htmlspecialchars($user['bio'])) : '<span class="text-white/50">Keine Bio vorhanden.</span>' ?>
                             </p>
+							<div class="hhr-summary profile-header"></div>
+							 <button id="hhr-help" class="hhr-help" type="button" title="Was ist das HHR?">
+    <i class="ti ti-help-circle" aria-hidden="true"></i>
+    <span class="sr-only">Hilfe</span>
+  </button>
                         </div>
                     </div>
 
@@ -442,6 +442,88 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
   }
   ?>
 </div>
+<script>
+(function(){
+  const btn = document.getElementById('hhr-help');
+  if (!btn) return;
+
+  // nutzt deine vorhandene openModal/HHR_openModal Funktion – sonst baut es kurz selbst ein Modal
+  function useModal(html){
+    const make = window.openModal || window.HHR_openModal || function(innerHTML){
+      const wrap=document.createElement('div');
+      wrap.setAttribute('role','dialog'); wrap.setAttribute('aria-modal','true');
+      wrap.style.cssText='position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center';
+      wrap.innerHTML=`
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px)"></div>
+        <div class="hh-modal__panel" style="position:relative;width:min(92vw,700px);background:#1a1c1f;border:1px solid #2c2f33;border-radius:14px;box-shadow:0 20px 80px rgba(0,0,0,.55);padding:22px">
+          <button type="button" aria-label="Schließen" style="position:absolute;top:10px;right:10px;background:transparent;border:0;color:#cbd0d6;font-size:18px;cursor:pointer">✕</button>
+          ${innerHTML}
+        </div>`;
+      document.body.appendChild(wrap);
+      const panel=wrap.children[1];
+      const close=()=>wrap.remove();
+      panel.querySelector('[aria-label="Schließen"]').addEventListener('click',close);
+      wrap.firstElementChild.addEventListener('click',close);
+      document.addEventListener('keydown',function onEsc(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',onEsc);}});
+      return {panel, close};
+    };
+    return make(html);
+  }
+
+  btn.addEventListener('click', () => {
+    const html = `
+      <h3 style="color:#fff;margin:0 0 12px;font-weight:800;font-size:22px;">HHR – HuntHub Ranking</h3>
+      <div style="color:#cbd5e1;line-height:1.65">
+        <p>Das <strong>HuntHub Ranking (HHR)</strong> ist ein 6-Sterne-System, mit dem Spieler ihr Miteinander nach einer Runde einschätzen. Es bewertet <em>Verhalten</em> und <em>Teamplay</em> – nicht Skill/Stats.</p>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">So wird bewertet</h4>
+        <ul style="margin:0 0 8px 18px">
+          <li><strong>Spielweise:</strong> fair, teamorientiert, respektvoll?</li>
+          <li><strong>Freundlichkeit:</strong> Umgangston in Voice/Chat?</li>
+          <li><strong>Hilfsbereitschaft:</strong> Callouts, Revives, Support?</li>
+        </ul>
+        <p>Je Kategorie vergibst du <strong>1–6 Sterne</strong> und kannst optional einen Kommentar (max. 800 Zeichen) hinzufügen.</p>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">Der HHR-Score</h4>
+        <ul style="margin:0 0 8px 18px">
+          <li>Ø = (Spielweise + Freundlichkeit + Hilfsbereitschaft) ÷ 3</li>
+          <li>Der exakte Ø (z. B. <strong>5,33 / 6,0</strong>) wird angezeigt.</li>
+          <li>Für die Sternanzeige wird zusätzlich auf <strong>1–6 Sterne</strong> gerundet.</li>
+        </ul>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">Sichtbarkeit</h4>
+        <ul style="margin:0 0 8px 18px">
+          <li>Unter dem Avatar: Ø-Wert + Anzahl der Bewertungen.</li>
+          <li>Im Tab <strong>„Bewertungen“</strong>: alle Einzelbewertungen mit Sterne-Split, Kommentar und Zeitstempel.</li>
+        </ul>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">Wer darf bewerten?</h4>
+        <ul style="margin:0 0 8px 18px">
+          <li>Nur eingeloggt und <strong>nicht</strong> das eigene Profil.</li>
+          <li>Pro Person <strong>eine</strong> Bewertung – du kannst sie jederzeit <strong>aktualisieren</strong> (sie überschreibt die alte).</li>
+        </ul>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">So gibst du eine Bewertung ab</h4>
+        <ol style="margin:0 0 8px 18px">
+          <li>Im Profil auf <strong>„Bewertung abgeben“</strong> klicken.</li>
+          <li>Sterne setzen, optional kommentieren.</li>
+          <li><strong>Speichern</strong> – der Ø-Wert und die Liste aktualisieren sich sofort (kein Reload).</li>
+        </ol>
+
+        <h4 style="margin:14px 0 6px;color:#fff;font-weight:700;">Fairness & Hinweise</h4>
+        <ul style="margin:0 0 0 18px">
+          <li>Bewerte ehrlich und sachlich – das hilft der Community.</li>
+          <li>Missbrauch/Beleidigungen bitte melden.</li>
+        </ul>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-primary rounded-12" data-close>Verstanden</button>
+      </div>`;
+    const m = useModal(html);
+    m.panel.querySelector('[data-close]')?.addEventListener('click', m.close);
+  });
+})();
+</script>
 
 
                     <div class="order-4 3xl:absolute 3xl:right-0 3xl:-top-25 flex items-center justify-center flex-wrap gap-20p z-[3]">
@@ -471,7 +553,7 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
 					<?php $base = '/user.php?id='.(int)$profile['id']; ?>
                         <div class="tab-navbar flex items-center flex-wrap gap-x-32p gap-y-24p sm:text-xl text-lg *:font-borda font-medium text-w-neutral-1 whitespace-nowrap">
                             <a href="<?= $base ?>&tab=posts"   class="<?= $tab==='posts'?'is-active':'' ?>" data-i18n="posts"><?php echo $L['posts']; ?></a>
-                            <!-- <a href="<?= $base ?>&tab=matches" class="<?= $tab==='matches'?'is-active':'' ?>">Matches</a> -->
+                             <a href="<?= $base ?>&tab=bewertungen" class="<?= $tab==='bewertungen'?'is-active':'' ?>">Bewertungen</a> 
                             <a href="<?= $base ?>&tab=achv"    class="<?= $tab==='achv'?'is-active':'' ?>" data-i18n="arch"><?php echo $L['arch']; ?></a>
                         </div>
 
@@ -495,15 +577,9 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
                         <div class="grid grid-cols-1 gap-30p *:bg-b-neutral-3 *:rounded-12 *:px-40p *:py-32p"
 						id="profile-content" data-user-id="<?= (int)$profile['id'] ?>">
 
-<?php if (!empty($userThreads)): ?>
+
  <?= $partialHtml ?>
-<?php else: ?>
-    <div data-aos="fade-up">
-        <div class="py-20p">
-            <div class="text-w-neutral-4" data-i18n="noposts"><?php echo $L['noposts']; ?></div>
-        </div>
-    </div>
-<?php endif; ?>
+
 
                         </div>
 
@@ -945,7 +1021,15 @@ function applyPanNormalized(imgEl, frameEl, relScale, u, v) {
       loadTab(url, false);
     });
   })();
+  
   </script>
+<script src="/theme/js/ratings.js?v=20250829d" defer></script>
+  <link rel="stylesheet" href="/assets/styles/app.css?v=hhr-stars-1">
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+if (window.HHR) HHR.init(<?= (int)$user['id'] ?>, <?= ($me && (int)$me['id'] !== (int)$user['id']) ? 'true' : 'false' ?>);
+});
+</script>
 <?php
 $content = ob_get_clean();
 render_theme_page($content, htmlspecialchars($user['display_name']) . ' – Profil');

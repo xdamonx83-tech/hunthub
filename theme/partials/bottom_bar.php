@@ -334,6 +334,18 @@ const CSRF = "<?= htmlspecialchars((string)($csrf ?? ''), ENT_QUOTES, 'UTF-8') ?
       <label for="regPass">Passwort</label>
       <input id="regPass" name="password" type="password" class="ps-input" required>
     </div>
+	  <div class="ps-field ps-consent">
+    <label class="ps-checkbox">
+      <input id="regConsent" name="privacy_consent" type="checkbox" required>
+      <span>
+        Ich habe die
+        <a href="/privacy.php" target="_blank" rel="noopener">Datenschutzerklärung</a>
+        gelesen und stimme der Verarbeitung meiner Daten zum Zweck der Registrierung zu.
+      </span>
+    </label>
+    <!-- optional: Versionierung deiner Policy -->
+    <input type="hidden" name="privacy_version" value="2025-08-29">
+  </div>
     <button class="ps-submit" type="submit">
       <i class="ti ti-user-plus"></i><span>Konto erstellen</span>
     </button>
@@ -347,9 +359,9 @@ const CSRF = "<?= htmlspecialchars((string)($csrf ?? ''), ENT_QUOTES, 'UTF-8') ?
 <!-- Bottom Bar -->
 <div class="hhbb-wrap" role="navigation" aria-label="Mobile bottom bar">
   <div class="hhbb-bar">
-    <button id="hhbb-btn-requests" class="hhbb-btn" aria-haspopup="dialog" aria-controls="hhbb-requests"><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-user-screen"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.03 17.818a3 3 0 0 0 1.97 -2.818v-8a3 3 0 0 0 -3 -3h-12a3 3 0 0 0 -3 3v8c0 1.317 .85 2.436 2.03 2.84" /><path d="M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M8 21a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2" /></svg></span><span >Anfragen</span><span id="hhbb-badge-requests" class="hhbb-badge is-hidden">0</span></button>
+   <?php if (!empty($me['id'])): ?> <button id="hhbb-btn-requests" class="hhbb-btn" aria-haspopup="dialog" aria-controls="hhbb-requests"><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-user-screen"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.03 17.818a3 3 0 0 0 1.97 -2.818v-8a3 3 0 0 0 -3 -3h-12a3 3 0 0 0 -3 3v8c0 1.317 .85 2.436 2.03 2.84" /><path d="M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M8 21a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2" /></svg></span><span >Anfragen</span><span id="hhbb-badge-requests" class="hhbb-badge is-hidden">0</span></button>
     <button type="button" data-toggle-global-chat class="hhbb-btn" ><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-message-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8" /><path d="M8 13h6" /><path d="M12.01 18.594l-4.01 2.406v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5" /><path d="M16 19h6" /><path d="M19 16v6" /></svg></span><span >Chat</span></button>
-	<button id="hhbb-btn-messages" class="hhbb-btn" aria-haspopup="dialog" aria-controls="hhbb-messages"><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-message-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8" /><path d="M8 13h6" /><path d="M12.01 18.594l-4.01 2.406v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5" /><path d="M16 19h6" /><path d="M19 16v6" /></svg></span><span >Nachrichten</span><span id="hhbb-badge-messages" class="hhbb-badge is-hidden">0</span></button>
+	<button id="hhbb-btn-messages" class="hhbb-btn" aria-haspopup="dialog" aria-controls="hhbb-messages"><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-message-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8" /><path d="M8 13h6" /><path d="M12.01 18.594l-4.01 2.406v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v5.5" /><path d="M16 19h6" /><path d="M19 16v6" /></svg></span><span >Nachrichten</span><span id="hhbb-badge-messages" class="hhbb-badge is-hidden">0</span></button><?php endif; ?>
     <?php if ($me): ?>
 	<button id="hhbb-btn-profile"  class="hhbb-btn" aria-haspopup="dialog" aria-controls="hhbb-profile"><span class="hhbb-icon"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-user-square-rounded"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 13a3 3 0 1 0 0 -6a3 3 0 0 0 0 6z" /><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z" /><path d="M6 20.05v-.05a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v.05" /></svg></span><span >Profil</span></button>
 	<?php else: ?>
@@ -734,5 +746,53 @@ setBadge(badges.requests, (d.incoming || d.items || d.pending || []).length);
       hardReload();
     }
   });
+})();
+(() => {
+  if (window.__psAuthTabsInstalled) return;
+  window.__psAuthTabsInstalled = true;
+
+  function showAuth(mode) {
+    const loginForm = document.querySelector('[data-auth="login"]');
+    const regForm   = document.querySelector('[data-auth="register"]');
+
+    const loginTab  = document.querySelector('[data-auth-tab="login"]');
+    const regTab    = document.querySelector('[data-open-register]');
+
+    const toLogin = mode !== 'register';
+
+    if (loginForm) loginForm.hidden = !toLogin;
+    if (regForm)   regForm.hidden   =  toLogin;
+
+    if (loginTab) {
+      loginTab.classList.toggle('is-active', toLogin);
+      loginTab.setAttribute('aria-selected', String(toLogin));
+    }
+    if (regTab) {
+      regTab.classList.toggle('is-active', !toLogin);
+      regTab.setAttribute('aria-selected', String(!toLogin));
+    }
+
+    // Fokus setzen
+    const targetForm = toLogin ? loginForm : regForm;
+    if (targetForm) {
+      const focusEl =
+        targetForm.querySelector('input[autofocus], input, select, textarea, button');
+      if (focusEl) setTimeout(() => focusEl.focus(), 0);
+    }
+  }
+
+  // Delegation: trifft auch dynamisch gerenderte Buttons
+  document.addEventListener('click', (ev) => {
+    const regBtn   = ev.target.closest('[data-open-register]');
+    const loginBtn = ev.target.closest('[data-auth-tab="login"], [data-open-login]');
+    if (!regBtn && !loginBtn) return;
+
+    ev.preventDefault();
+    showAuth(regBtn ? 'register' : 'login');
+  });
+
+  // Optional: globales API, falls du von anderswo öffnen willst
+  window.hhAuth = window.hhAuth || {};
+  window.hhAuth.open = (mode = 'login') => showAuth(mode);
 })();
 </script>

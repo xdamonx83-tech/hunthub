@@ -271,7 +271,33 @@ window.APP_BASE = document.querySelector('meta[name="app-base"]')?.content || ''
             0%, 100% { opacity: 1; text-shadow: 0 0 5px var(--text-color); }
             50% { opacity: 0.7; text-shadow: none; }
         }
-		
+		/* Legal Modal */
+.hh-legal.hidden { display: none; }
+.hh-legal { position: fixed; inset: 0; z-index: 9999; }
+.hh-legal__backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.7);
+  backdrop-filter: blur(2px);
+}
+.hh-legal__panel {
+  position: relative; max-width: 900px; max-height: 85vh;
+  margin: 5vh auto; padding: 1.25rem 1.25rem 1.5rem;
+  overflow: auto; border-radius: 16px;
+  background: #151312; /* dunkles Braun/Schwarz, Hunt-Style */
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.hh-legal__title {
+  margin: 0 2.5rem .75rem 0; font-size: 1.4rem; color: #eee;
+  letter-spacing: .02em;
+}
+.hh-legal__content { line-height: 1.7; color: #ddd; }
+.hh-legal__content h1,.hh-legal__content h2,.hh-legal__content h3 { color:#f0f0f0; margin:1rem 0 .25rem; }
+.hh-legal__content a { text-decoration: underline; }
+.hh-legal__close {
+  position: absolute; top: .75rem; right: .75rem;
+  background: transparent; border: 0; font-size: 1.25rem; color: #bbb; cursor: pointer;
+}
+.hh-legal__close:hover { color: #fff; }
+
 </style>
 <script>
 window.showAchievementPopup = function (data) {
@@ -700,21 +726,29 @@ $label = $lang === 'en' ? 'English' : 'Deutsch';
 							</div>
 							<ul class="grid grid-cols-2 sm:gap-y-16p gap-y-2 gap-x-32p *:flex *:items-center">
 								<li class="group hover:translate-x-0 -translate-x-5 inline-flex items-center gap-1 hover:text-primary transition-1 max-w-fit">
-									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a class="text-m-regular text-w-neutral-3" href="https://htda.de/impressum/">Impressum</a>
+									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a class="text-m-regular text-w-neutral-3" href="<?= $base ?>/legal/rechtlich.php?doc=impressum" data-legal="impressum" class="open-impressum">Impressum</a>
 								</li>
 								<li class="group hover:translate-x-0 -translate-x-5 inline-flex items-center gap-1 hover:text-primary transition-1 max-w-fit">
-									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a href="#" class="open-privacy">Datenschutz</a>
+									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a href="<?= $base ?>/legal/rechtlich.php?doc=privacy" data-legal="privacy" class="open-privacy">Datenschutz</a>
 								</li>
-								<a href="#" class="open-terms">Nutzungsbedingungen</a>
+								<li class="group hover:translate-x-0 -translate-x-5 inline-flex items-center gap-1 hover:text-primary transition-1 max-w-fit">
+									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a href="<?= $base ?>/legal/rechtlich.php?doc=netiquette" data-legal="netiquette" class="open-netiquette">Netiquette</a>
+								</li>
+								<li class="group hover:translate-x-0 -translate-x-5 inline-flex items-center gap-1 hover:text-primary transition-1 max-w-fit">
+									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i>
+								<a href="<?= $base ?>/legal/rechtlich.php?doc=terms" data-legal="terms" class="open-terms">Nutzungsbedingungen</a>
+								</li>
 							</ul>
+							
 						</div>
+						
 						<div class="4xl:col-start-8 4xl:col-end-10">
 							<div class="flex items-center gap-24p mb-24p">
 								<h4 class="heading-4 text-w-neutral-1 whitespace-nowrap" data-i18n="partner"><?php echo $L['partner']; ?></h4><span class="w-full max-w-[110px] h-0.5 bg-w-neutral-1"></span>
 							</div>
 							<ul class="grid grid-cols-2 sm:gap-y-16p gap-y-2 gap-x-32p *:flex *:items-center">
 								<li class="group hover:translate-x-0 -translate-x-5 inline-flex items-center gap-1 hover:text-primary transition-1 max-w-fit">
-									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a class="text-m-regular text-w-neutral-3" href="https://htda.de">HTDA.de | Community und News</a>
+									<i class="ti ti-chevron-right group-hover:visible invisible text-primary group-hover:opacity-100 opacity-0 transition-1"></i> <a class="text-m-regular text-w-neutral-3" href="https://huntmaps.online">HuntMaps.online</a>
 								</li>
 							</ul>
 						</div>
@@ -722,6 +756,14 @@ $label = $lang === 'en' ? 'English' : 'Deutsch';
 							<h4 class="heading-4 text-w-neutral-1 whitespace-nowrap mb-3" data-i18n="contactus"><?php echo $L['contactus']; ?></h4><a class="text-base text-w-neutral-3 mb-32p" href="mailto:info@htda.de">info@htda.de</a>
 						</div>
 					</div>
+					<div id="legal-modal" class="hh-legal hidden" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="hh-legal__backdrop" data-legal-close></div>
+  <div class="hh-legal__panel" role="document" aria-labelledby="legal-title">
+    <button class="hh-legal__close" type="button" data-legal-close aria-label="Schließen">✕</button>
+    <h2 id="legal-title" class="hh-legal__title">Titel</h2>
+    <div id="legal-content" class="hh-legal__content"><!-- wird per JS gefüllt --></div>
+  </div>
+</div>
 					<div class="flex items-center justify-between flex-wrap gap-24p py-30p"><div class="htda-copyright-box">
                <span data-i18n="copyright">
 			   <?php echo $L['copyright']; ?>
@@ -912,6 +954,77 @@ $label = $lang === 'en' ? 'English' : 'Deutsch';
     });
   });
 })();
+(function () {
+  const modal   = document.getElementById('legal-modal');
+  const titleEl = document.getElementById('legal-title');
+  const bodyEl  = document.getElementById('legal-content');
+
+  if (!modal || !titleEl || !bodyEl) return;
+
+  let lastFocus = null;
+
+  function lockScroll(lock) {
+    document.documentElement.style.overflow = lock ? 'hidden' : '';
+  }
+
+  function openModal() {
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    lockScroll(true);
+    const closeBtn = modal.querySelector('[data-legal-close]');
+    if (closeBtn) closeBtn.focus();
+    document.addEventListener('keydown', onKey);
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    lockScroll(false);
+    document.removeEventListener('keydown', onKey);
+    if (lastFocus) lastFocus.focus();
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') closeModal();
+  }
+
+  async function loadDoc(doc) {
+    try {
+      const url = `/legal/rechtlich.php?doc=${encodeURIComponent(doc)}&partial=1`;
+      const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Fehler beim Laden');
+      titleEl.textContent = data.title || 'Rechtliches';
+      bodyEl.innerHTML = data.html || '<p>Kein Inhalt.</p>';
+      openModal();
+    } catch (err) {
+      console.error(err);
+      // Fallback: normale Seite öffnen
+      window.location.href = `/legal/rechtlich.php?doc=${encodeURIComponent(doc)}`;
+    }
+  }
+
+  // Click-Delegation: Links mit data-legal="privacy|terms|netiquette"
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-legal]');
+    if (!a) return;
+
+    const doc = a.getAttribute('data-legal');
+    if (!doc) return;
+
+    e.preventDefault();
+    lastFocus = a;
+    loadDoc(doc);
+  });
+
+  // Close via Button/Backdrop
+  modal.addEventListener('click', (e) => {
+    if (e.target.matches('[data-legal-close]') || e.target.classList.contains('hh-legal__backdrop')) {
+      closeModal();
+    }
+  });
+})();
+
 </script>
 
 

@@ -58,6 +58,10 @@ ob_start();
     <a href="<?= $APP_BASE ?>/admin.php?view=notifications">Notifications</a>
     <a href="<?= $APP_BASE ?>/admin.php?view=gamification">Gamification</a>
     <a href="<?= $APP_BASE ?>/admin.php?view=messages">Messages</a>
+  <a href="?view=inspector" class="<?= ($view ?? '') === 'inspector' ? 'is-active' : '' ?>">
+    Storage-Inspector
+  </a>
+
   </div>
 
   <?php if ($view==='dashboard'): ?>
@@ -80,8 +84,321 @@ ob_start();
       <div class="admin-card"><div class="muted">Link-Previews</div><div class="kpi"><?= $k_lp ?></div></div>
       <div class="admin-card"><div class="muted">Achievements</div><div class="kpi"><?= $k_ach ?></div></div>
       <div class="admin-card"><div class="muted">User-Achievements</div><div class="kpi"><?= $k_uach ?></div></div>
+
+    </div><?php elseif ($view==='inspector'): ?>
+   <style>
+    .hh-inspector{--bg:#111;--fg:#e7e7e7;--mut:#a8a8a8;--card:#1a1715;--bd:#2b2826}
+    .hh-inspector .grid{display:grid;gap:16px;grid-template-columns:1fr}
+    @media(min-width:1100px){.hh-inspector .grid{grid-template-columns:1fr 1fr}}
+    .hh-inspector .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+    .hh-inspector h1{margin:0 0 8px}
+    .hh-inspector h2{margin:0 0 8px;font-size:15px;color:#f0f0f0}
+    .hh-inspector table{width:100%;border-collapse:collapse}
+    .hh-inspector th,.hh-inspector td{padding:8px;border-bottom:1px solid var(--bd);vertical-align:top}
+    .hh-inspector tbody tr:hover{background:#201d1b}
+    .hh-inspector .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+    .hh-inspector .mut{color:var(--mut)} .hh-inspector .small{font-size:12px}
+    .hh-inspector button{background:#2a2522;border:1px solid #3a3633;color:#eee;border-radius:10px;padding:8px 10px;cursor:pointer}
+    .hh-inspector button:hover{background:#342f2b}
+    .hh-inspector pre{white-space:pre-wrap;background:#141210;border:1px solid var(--bd);border-radius:10px;padding:10px;max-height:260px;overflow:auto}
+    .hh-inspector .tag{display:inline-block;padding:2px 6px;border-radius:999px;border:1px solid #3a3633;color:#ddd;font-size:12px;margin:0 6px 6px 0}
+    .hh-inspector .pill{padding:2px 10px;border-radius:999px;background:#2a2522;color:#ddd;font-size:12px;border:1px solid #3a3633}
+    .status{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;border:1px solid #3a3633}
+    .status i{width:10px;height:10px;border-radius:999px;display:inline-block}
+    .green{background:#1c271c} .green i{background:#27c279}
+    .yellow{background:#2a281a} .yellow i{background:#d7c95c}
+    .red{background:#2b1a1a} .red i{background:#e86a6a}
+    .list{margin:.5rem 0 0 1rem;padding:0} .list li{margin:.25rem 0}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .flex-scan{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .flex-scan input{background:#141210;border:1px solid #3a3633;color:#eee;border-radius:10px;padding:8px 10px;min-width:280px}
+  </style>
+
+  <div class="hh-inspector admin-wrap">
+    <h1>Storage-Inspector</h1>
+    <div class="row">
+      <button id="hhsi-export">Export JSON</button>
+      <span class="mut small">Tipp: Secure/SameSite/Path siehst du in DevTools → Network → <code>Set-Cookie</code>.</span>
     </div>
 
+    <!-- POLICY CHECK -->
+    <section class="card">
+      <h2>Policy-Check (Ampel)</h2>
+      <div class="row flex-scan">
+        <span class="mut small">Scanne Seite (gleiches Origin):</span>
+        <input id="hhsi-path" type="text" value="/" class="mono" />
+        <button id="hhsi-scan">Scannen</button>
+        <span id="hhsi-status" class="status green"><i></i><b>Kein Consent nötig</b><span class="mut small"> – nur notwendige Cookies</span></span>
+      </div>
+      <div id="hhsi-why" class="small" style="margin-top:.5rem"></div>
+      <div id="hhsi-hosts" class="small" style="margin-top:.5rem"></div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Cookies</h2>
+        <table id="hhsi-cookie"><thead><tr><th>Name</th><th>Wert (gekürzt)</th><th>Kategorie</th></tr></thead><tbody></tbody></table>
+        <div class="small mut">HttpOnly wird indirekt erkannt (Server hat’s, JS nicht). Kategorien sind Heuristik.</div>
+      </section>
+
+      <section class="card">
+        <h2>localStorage</h2>
+        <table id="hhsi-ls"><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section class="card">
+        <h2>sessionStorage</h2>
+        <table id="hhsi-ss"><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section class="card">
+        <h2>IndexedDB</h2>
+        <div id="hhsi-idb"><span class="mut small">Prüfe Unterstützung…</span></div>
+      </section>
+
+      <section class="card">
+        <h2>Cache Storage</h2>
+        <div id="hhsi-cache"><span class="mut small">Prüfe Caches…</span></div>
+      </section>
+
+      <section class="card">
+        <h2>Rohdaten</h2>
+        <pre id="hhsi-raw"></pre>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ---- Server-Cookies (inkl. HttpOnly)
+    const HH_SERVER_COOKIES = <?= json_encode($_COOKIE ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) ?>;
+    const ORIGIN_HOST = location.hostname;
+
+    // Muster für Cookie-Klassifikation
+    const CK_NEED   = [/sess/i,/session/i,/csrf/i,/^lang$/i,/pll_?language/i,/^tz$/i];
+    const CK_STATS  = [/^_ga/i,/^_gid/i,/^_gat/i,/^_ga_/i,/^_pk_/i,/^_hj/i,/^_cl/i,/^amp/i,/^amplitude/i,/^mp_/,/^matomo/i,/^metrika/i];
+    const CK_MARKET = [/^_fbp/i,/^fr$/i,/^_gcl_/i,/^tt(_|$)/i,/^_scid/i,/^_pin/,/^bcookie|lidc|liap/i,/^_uetsid|_uetvid/i];
+
+    const KN_ANA = ['google-analytics.com','googletagmanager.com','stats.g.doubleclick.net','clarity.ms','hotjar.com','matomo','plausible.io'];
+    const KN_MKT = ['connect.facebook.net','facebook.net','snapchat.com','analytics.tiktok.com','static.ads-twitter.com','doubleclick.net','adservice.google.com'];
+    const KN_EMB = ['youtube.com','youtu.be','ytimg.com','twitch.tv','player.twitch.tv','spotify.com','soundcloud.com','discord.com','jsfiddle.net'];
+    const KN_FONT= ['fonts.googleapis.com','fonts.gstatic.com','use.typekit.net','use.fontawesome.com','cdn.jsdelivr.net','unpkg.com'];
+    const KN_CAP = ['google.com/recaptcha','gstatic.com/recaptcha'];
+
+    const $ = (s,r=document)=>r.querySelector(s);
+    const TBody = id => $('#'+id+' tbody');
+
+    function parseDocCookies(){
+      const out={}; const raw=document.cookie||'';
+      raw.split(';').forEach(p=>{
+        const s=p.trim(); if(!s) return;
+        const i=s.indexOf('='); const k=i>=0?s.slice(0,i):s; const v=i>=0?decodeURIComponent(s.slice(i+1)):'';
+        out[k]=v;
+      });
+      return out;
+    }
+    function short(v,n=80){ v=String(v??''); return v.length>n? v.slice(0,n)+'…' : v; }
+
+    function classifyCookie(name){
+      if (CK_NEED.some(rx=>rx.test(name))) return 'notwendig';
+      if (CK_MARKET.some(rx=>rx.test(name))) return 'marketing';
+      if (CK_STATS.some(rx=>rx.test(name)))  return 'statistik';
+      return 'unbekannt';
+    }
+
+    function renderCookies(){
+      const js = parseDocCookies();
+      const names = new Set([...Object.keys(HH_SERVER_COOKIES), ...Object.keys(js)]);
+      const rows = [];
+      names.forEach(name=>{
+        const sv = HH_SERVER_COOKIES[name];
+        const jv = js[name];
+        const cat = classifyCookie(name);
+        rows.push(`<tr><td class="mono">${name}</td><td>${short(jv ?? sv ?? '')}</td><td>${cat}</td></tr>`);
+      });
+      TBody('hhsi-cookie').innerHTML = rows.join('') || `<tr><td colspan="3" class="mut">Keine Cookies</td></tr>`;
+    }
+
+    function renderStorage(kind, id){
+      try{
+        const s = (kind==='local')? localStorage : sessionStorage;
+        const rows=[];
+        for (let i=0;i<s.length;i++){ const k=s.key(i); rows.push(`<tr><td class="mono">${k}</td><td>${short(s.getItem(k))}</td></tr>`); }
+        TBody(id).innerHTML = rows.join('') || `<tr><td colspan="2" class="mut">leer</td></tr>`;
+      }catch(e){ TBody(id).innerHTML = `<tr><td colspan="2" class="mut">nicht verfügbar</td></tr>`; }
+    }
+
+    async function renderIDB(){
+      const wrap=$('#hhsi-idb');
+      if(!('indexedDB' in window)) return wrap.innerHTML='<span class="mut">Nicht unterstützt</span>';
+      if(!('databases' in indexedDB)) return wrap.innerHTML='<span class="mut"><code>indexedDB.databases()</code> nicht verfügbar</span>';
+      try{
+        const dbs = await indexedDB.databases();
+        if(!dbs?.length) return wrap.innerHTML='<span class="mut">Keine Datenbanken</span>';
+        wrap.innerHTML = dbs.map(d=>`<span class="tag">${(d.name||'(ohne Namen)')} <span class="mut">v${d.version||'-'}</span></span>`).join('');
+      }catch(e){ wrap.innerHTML='<span class="mut">Fehler beim Auslesen</span>'; }
+    }
+
+    async function renderCaches(){
+      const wrap=$('#hhsi-cache');
+      if(!('caches' in window)) return wrap.innerHTML='<span class="mut">Nicht unterstützt</span>';
+      try{
+        const keys = await caches.keys();
+        if(!keys.length) return wrap.innerHTML='<span class="mut">Keine Caches</span>';
+        const out=[];
+        for(const k of keys){ const c=await caches.open(k); const reqs=await c.keys(); out.push(`<span class="tag">${k} <span class="mut">${reqs.length} Einträge</span></span>`); }
+        wrap.innerHTML=out.join('');
+      }catch(e){ wrap.innerHTML='<span class="mut">Fehler beim Auslesen</span>'; }
+    }
+
+    function hostOf(u){ try{ return new URL(u, location.origin).hostname; }catch(e){ return ''; } }
+
+    function analyzeDOM(dom){
+      const scripts = Array.from(dom.querySelectorAll('script[src]')).map(s=>s.getAttribute('src'));
+      const iframes = Array.from(dom.querySelectorAll('iframe[src]')).map(s=>s.getAttribute('src'));
+      const links   = Array.from(dom.querySelectorAll('link[href]')).map(l=>l.getAttribute('href'));
+      const allUrls = [...scripts, ...iframes, ...links].filter(Boolean);
+      const hosts = Array.from(new Set(allUrls.map(hostOf).filter(Boolean)));
+
+      const third = hosts.filter(h=>h && h!==ORIGIN_HOST);
+      const has = (list) => third.some(h=>list.some(k=>h.includes(k)));
+
+      const groups = {
+        analytics: third.filter(h=>KN_ANA.some(k=>h.includes(k))),
+        marketing: third.filter(h=>KN_MKT.some(k=>h.includes(k))),
+        embeds:    third.filter(h=>KN_EMB.some(k=>h.includes(k))),
+        fonts:     third.filter(h=>KN_FONT.some(k=>h.includes(k))),
+        captcha:   third.filter(h=>KN_CAP.some(k=>h.includes(k))),
+        other:     third.filter(h=>!(KN_ANA.concat(KN_MKT,KN_EMB,KN_FONT,KN_CAP).some(k=>h.includes(k)))),
+        autoEmbeds: iframes.filter(u=>KN_EMB.some(k=>u.includes(k))) // echte iframes auf Seite
+      };
+
+      return groups;
+    }
+
+    function evaluatePolicy(groups, cookieCats){
+      const reasons = [];
+
+      if (cookieCats.marketing.length || groups.marketing.length) {
+        reasons.push('Marketing-Tracker erkannt (Cookies oder externe Hosts).');
+      }
+      if (cookieCats.statistik.length || groups.analytics.length) {
+        reasons.push('Analytics mit Cookies/externen Hosts erkannt.');
+      }
+      if (groups.captcha.length) {
+        reasons.push('reCAPTCHA eingebunden – gilt meist als zustimmungspflichtig.');
+      }
+      if (groups.autoEmbeds.length) {
+        reasons.push('Externe Media-Embeds werden automatisch geladen (YouTube/Twitch/…).');
+      }
+
+      // Consent nötig, wenn eine der roten Bedingungen erfüllt:
+      const consent = reasons.length > 0;
+
+      // Ampel-Farbe:
+      let color = 'green';
+      if (consent) color = 'red';
+      else if (groups.fonts.length || groups.other.length) color = 'yellow';
+
+      return {consent, color, reasons};
+    }
+
+    function classifyAllCookieNames(){
+      const all = new Set(Object.keys(HH_SERVER_COOKIES).concat(Object.keys(parseDocCookies())));
+      const res = {notwendig:[], statistik:[], marketing:[], unbekannt:[]};
+      all.forEach(n => res[classifyCookie(n)].push(n));
+      return res;
+    }
+
+    function paintStatus({consent, color, reasons}, groups){
+      const box = $('#hhsi-status');
+      box.className = 'status '+color;
+
+      if (!consent) {
+        box.innerHTML = '<i></i><b>Kein Consent nötig</b><span class="mut small"> – nur notwendige Cookies</span>';
+      } else {
+        box.innerHTML = '<i></i><b>Consent nötig</b><span class="mut small"> – siehe Gründe unten</span>';
+      }
+
+      const why = $('#hhsi-why');
+      const cookieCats = classifyAllCookieNames();
+      const li = [];
+      if (reasons.length) li.push(...reasons.map(r=>`<li>${r}</li>`));
+      if (cookieCats.marketing.length) li.push(`<li>Marketing-Cookies: <span class="mono">${cookieCats.marketing.join(', ')}</span></li>`);
+      if (cookieCats.statistik.length) li.push(`<li>Statistik-Cookies: <span class="mono">${cookieCats.statistik.join(', ')}</span></li>`);
+      if (!li.length) li.push('<li>Keine auffälligen Cookies/Hosts erkannt.</li>');
+      why.innerHTML = `<ul class="list">${li.join('')}</ul>`;
+
+      const hosts = $('#hhsi-hosts');
+      const mk = x => x.length? x.map(h=>`<span class="tag">${h}</span>`).join('') : '<span class="mut">–</span>';
+      hosts.innerHTML = `
+        <div class="row small"><b>Analytics-Hosts:</b> ${mk(groups.analytics)}</div>
+        <div class="row small"><b>Marketing-Hosts:</b> ${mk(groups.marketing)}</div>
+        <div class="row small"><b>Media-Embeds:</b> ${mk(groups.embeds)}</div>
+        <div class="row small"><b>reCAPTCHA:</b> ${mk(groups.captcha)}</div>
+        <div class="row small"><b>Externe Fonts/CDNs:</b> ${mk(groups.fonts)}</div>
+        <div class="row small"><b>Weitere Dritthosts:</b> ${mk(groups.other)}</div>
+      `;
+    }
+
+    async function scanPath(path){
+      try{
+        const res = await fetch(path, {credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}});
+        const html = await res.text();
+        const dom = new DOMParser().parseFromString(html, 'text/html');
+        const groups = analyzeDOM(dom);
+        const policy = evaluatePolicy(groups, classifyAllCookieNames());
+        paintStatus(policy, groups);
+        return {groups, policy};
+      }catch(e){
+        $('#hhsi-why').innerHTML = `<span class="mut small">Scan fehlgeschlagen (${String(e)}) – Seite vielleicht nicht erreichbar.</span>`;
+        return {groups:{analytics:[],marketing:[],embeds:[],fonts:[],captcha:[],other:[],autoEmbeds:[]}, policy:{consent:false,color:'yellow',reasons:['Scan fehlgeschlagen']}}
+      }
+    }
+
+    function renderRaw(){
+      const data = {
+        serverCookies: HH_SERVER_COOKIES,
+        documentCookies: parseDocCookies(),
+        localStorage: Object.fromEntries(Object.keys(localStorage||{}).map(k=>[k, localStorage.getItem(k)])),
+        sessionStorage: Object.fromEntries(Object.keys(sessionStorage||{}).map(k=>[k, sessionStorage.getItem(k)])),
+        time: new Date().toISOString()
+      };
+      $('#hhsi-raw').textContent = JSON.stringify(data, null, 2);
+      return data;
+    }
+
+    function exportJSON(storageDump, scan){
+      const payload = {
+        storage: storageDump,
+        scan: scan || null
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='hunthub-storage-report.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // ---- INIT
+    renderCookies();
+    renderStorage('local','hhsi-ls');
+    renderStorage('session','hhsi-ss');
+    renderIDB();
+    renderCaches();
+    let storageDump = renderRaw();
+
+    // Ersten Scan auf "/"
+    let lastScan = null;
+    scanPath('/').then(r => { lastScan = r; });
+
+    $('#hhsi-scan').addEventListener('click', async ()=>{
+      const path = $('#hhsi-path').value || '/';
+      lastScan = await scanPath(path);
+    });
+
+    $('#hhsi-export').addEventListener('click', ()=>{
+      exportJSON(storageDump, lastScan);
+    });
+  </script>
   <?php elseif ($view==='users'): ?>
     <div class="admin-card">
       <form id="userSearch" onsubmit="return false" style="display:flex;gap:.5rem;flex-wrap:wrap">

@@ -24,3 +24,53 @@ async function renderProfileBox(){
     console.error('[MBB] me.php',e); box.innerHTML='<div class="empty">Fehler beim Laden.</div>';
   }
 }
+// Mobile-Bar: Login/Register Trigger (defensiv & idempotent)
+(function () {
+  if (window.__mbbAuthHookInstalled) return;
+  window.__mbbAuthHookInstalled = true;
+
+  const APP_BASE =
+    window.APP_BASE ||
+    document.querySelector('meta[name="app-base"]')?.content ||
+    '';
+
+  document.addEventListener('click', (ev) => {
+    const regBtn = ev.target.closest('[data-open-register]');
+    const logBtn = ev.target.closest('[data-open-login]');
+
+    if (!regBtn && !logBtn) return;
+
+    ev.preventDefault();
+
+    const mode = regBtn ? 'register' : 'login';
+
+    // 1) Custom Event (für Module wie auth-forms.js)
+    try {
+      window.dispatchEvent(
+        new CustomEvent('hh:open-auth', { detail: { mode } })
+      );
+    } catch (e) {}
+
+    // 2) Direkter Call, wenn globales API existiert
+    try {
+      if (window.hhAuth && typeof window.hhAuth.open === 'function') {
+        window.hhAuth.open(mode); // erwartet 'login' | 'register'
+        return;
+      }
+      if (typeof window.openAuthPopup === 'function') {
+        window.openAuthPopup(mode);
+        return;
+      }
+      if (typeof window.openAuthSheet === 'function') {
+        window.openAuthSheet(mode);
+        return;
+      }
+    } catch (e) {
+      // ignore and fall back
+    }
+
+    // 3) Fallback: Seite aufrufen
+    const target = mode === 'register' ? '/register.php' : '/theme/login.php';
+    window.location.href = APP_BASE + target;
+  });
+})();

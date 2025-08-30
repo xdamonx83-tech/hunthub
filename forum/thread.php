@@ -110,6 +110,8 @@ SELECT
   t.title,
   t.slug,
   t.is_locked,
+  t.is_pinned,  
+  t.is_locked,
   t.posts_count,
   t.likes_count,
   t.board_id AS thread_board_id,   -- <- aus threads
@@ -373,7 +375,16 @@ function autolink_html(string $html): string {
                             <div class="grid grid-cols-12 gap-30p relative xl:py-[130px] md:py-30 sm:py-25 py-20 z-[2]">
                                 <div class="lg:col-start-2 lg:col-end-12 col-span-12">
                                     <h2 class="heading-2 text-w-neutral-1 mb-3">
-                                        <?= htmlspecialchars($thread['title']) ?>
+                              
+										<h2 class="heading-2 text-w-neutral-1 mb-3 flex items-center gap-2">
+  <?= htmlspecialchars($thread['title']) ?>
+  <?php if (!empty((int)$thread['is_pinned'])): ?>
+    <span class="flag flag-pin"><i class="ti ti-pin"></i> Gepinnt</span>
+  <?php endif; ?>
+  <?php if (!empty((int)$thread['is_locked'])): ?>
+    <span class="flag flag-locked"><i class="ti ti-lock"></i> Geschlossen</span>
+  <?php endif; ?>
+</h2>
                                     </h2>
                                     <ul class="breadcrumb">
                                         <li class="breadcrumb-item">

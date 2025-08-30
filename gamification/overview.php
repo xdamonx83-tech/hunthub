@@ -206,7 +206,7 @@ ob_start(); ?>
                     <?php foreach ($ach as $a): ?>
                     <li class="flex items-center gap-3">
                       <?php if (!empty($a['icon'])): ?>
-                        <img style="width: 100px;" src="<?= htmlspecialchars($a['icon']) ?>" class="size-36p rounded" alt="">
+                        <img style="max-height: 50px;" src="<?= htmlspecialchars($a['icon']) ?>" class="size-36p rounded" alt="">
                       <?php else: ?><div class="size-36p rounded bg-black/30 flex items-center justify-center">🏅</div><?php endif; ?>
                       <div>
                         <div class="text-w-neutral-1"><?= htmlspecialchars($a['title'] ?? 'Erfolg') ?></div>
